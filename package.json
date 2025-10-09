@@ -9,7 +9,10 @@
     "pm2:start": "pm2 start server.js --name defipoly-api",
     "pm2:stop": "pm2 stop defipoly-api",
     "pm2:restart": "pm2 restart defipoly-api",
-    "pm2:logs": "pm2 logs defipoly-api"
+    "pm2:logs": "pm2 logs defipoly-api",
+    "db:optimize": "node optimize-sqlite.js optimize",
+    "db:backup": "node optimize-sqlite.js backup", 
+    "db:health": "node optimize-sqlite.js health"
   },
   "keywords": ["defipoly", "solana", "profile"],
   "author": "",
@@ -19,7 +22,8 @@
     "cors": "^2.8.5",
     "sqlite3": "^5.1.6",
     "tweetnacl": "^1.0.3",
-    "bs58": "^5.0.0"
+    "bs58": "^5.0.0",
+    "mongodb": "^6.3.0" 
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
