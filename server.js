@@ -1,13 +1,11 @@
 // ============================================
 // FILE: server.js
-// Enhanced backend with game actions storage
+// Defipoly Backend - Fully Updated for Current Program
 // ============================================
 
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
-const nacl = require('tweetnacl');
-const bs58 = require('bs58');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,6 +13,25 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// ============================================
+// GAME CONSTANTS (Match your Solana program)
+// ============================================
+
+// Property set mappings - MUST match your frontend PROPERTIES constant
+const PROPERTY_SETS = {
+  0: [0, 1],           // Brown: Mediterranean Avenue, Baltic Avenue
+  1: [2, 3, 4],        // Light Blue: Oriental Avenue, Vermont Avenue, Connecticut Avenue
+  2: [5, 6, 7],        // Pink: St. Charles Place, States Avenue, Virginia Avenue
+  3: [8, 9, 10],       // Orange: St. James Place, Tennessee Avenue, New York Avenue
+  4: [11, 12, 13],     // Red: Kentucky Avenue, Indiana Avenue, Illinois Avenue
+  5: [14, 15, 16],     // Yellow: Atlantic Avenue, Ventnor Avenue, Marvin Gardens
+  6: [17, 18, 19],     // Green: Pacific Avenue, North Carolina Avenue, Pennsylvania Avenue
+  7: [20, 21]          // Dark Blue: Park Place, Boardwalk
+};
+
+// Cooldown duration: 24 hours in seconds
+const COOLDOWN_DURATION = 86400;
 
 // Initialize SQLite database
 const db = new sqlite3.Database('./defipoly.db', (err) => {
@@ -26,9 +43,12 @@ const db = new sqlite3.Database('./defipoly.db', (err) => {
   }
 });
 
-// Create tables
+// ============================================
+// DATABASE INITIALIZATION
+// ============================================
+
 function initDatabase() {
-  // Profiles table (existing)
+  // Profiles table
   db.run(`
     CREATE TABLE IF NOT EXISTS profiles (
       wallet_address TEXT PRIMARY KEY,
@@ -41,7 +61,7 @@ function initDatabase() {
     else console.log('✅ Profiles table ready');
   });
 
-  // Game actions table (NEW)
+  // Game actions table - Enhanced for current program
   db.run(`
     CREATE TABLE IF NOT EXISTS game_actions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,13 +82,13 @@ function initDatabase() {
     else console.log('✅ Game actions table ready');
   });
 
-  // Create indexes for fast queries
-  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_player ON game_actions(player_address, block_time DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_type ON game_actions(action_type, block_time DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_property ON game_actions(property_id, block_time DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_time ON game_actions(block_time DESC)`);
+  // Create optimized indexes
+  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_player_time ON game_actions(player_address, block_time DESC)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_type_time ON game_actions(action_type, block_time DESC)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_property_time ON game_actions(property_id, block_time DESC)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_actions_player_type_property ON game_actions(player_address, action_type, property_id)`);
   
-  // Player stats cache table (NEW - for performance)
+  // Player stats table
   db.run(`
     CREATE TABLE IF NOT EXISTS player_stats (
       wallet_address TEXT PRIMARY KEY,
@@ -91,7 +111,7 @@ function initDatabase() {
 }
 
 // ============================================
-// PROFILE ENDPOINTS (EXISTING)
+// PROFILE ENDPOINTS
 // ============================================
 
 app.get('/api/profile/:wallet', (req, res) => {
@@ -182,7 +202,7 @@ app.post('/api/profiles/batch', (req, res) => {
 });
 
 // ============================================
-// GAME ACTIONS ENDPOINTS (NEW)
+// GAME ACTIONS ENDPOINTS
 // ============================================
 
 // Store a game action
@@ -221,14 +241,16 @@ app.post('/api/actions', (req, res) => {
       }
 
       // Update player stats asynchronously
-      updatePlayerStats(playerAddress, actionType, amount);
+      if (this.changes > 0) {
+        updatePlayerStats(playerAddress, actionType, amount);
+      }
 
       res.json({ success: true, id: this.lastID });
     }
   );
 });
 
-// Batch store actions (for bulk imports)
+// Batch store actions
 app.post('/api/actions/batch', (req, res) => {
   const { actions } = req.body;
 
@@ -280,48 +302,97 @@ app.get('/api/actions/player/:wallet', (req, res) => {
   const { wallet } = req.params;
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
   const offset = parseInt(req.query.offset) || 0;
+  const actionType = req.query.type; // Optional filter
 
-  db.all(
-    `SELECT * FROM game_actions 
-     WHERE player_address = ? OR target_address = ?
-     ORDER BY block_time DESC 
-     LIMIT ? OFFSET ?`,
-    [wallet, wallet, limit, offset],
-    (err, rows) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      
-      const actions = rows.map(row => ({
-        id: row.id,
-        txSignature: row.tx_signature,
-        actionType: row.action_type,
-        playerAddress: row.player_address,
-        propertyId: row.property_id,
-        targetAddress: row.target_address,
-        amount: row.amount,
-        slots: row.slots,
-        success: row.success,
-        metadata: row.metadata ? JSON.parse(row.metadata) : null,
-        blockTime: row.block_time,
-        createdAt: row.created_at
-      }));
-      
-      res.json({ actions, count: actions.length });
+  let query = `SELECT * FROM game_actions 
+     WHERE (player_address = ? OR target_address = ?)`;
+  
+  const params = [wallet, wallet];
+  
+  if (actionType) {
+    query += ` AND action_type = ?`;
+    params.push(actionType);
+  }
+  
+  query += ` ORDER BY block_time DESC LIMIT ? OFFSET ?`;
+  params.push(limit, offset);
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
-  );
+    
+    const actions = rows.map(row => ({
+      id: row.id,
+      txSignature: row.tx_signature,
+      actionType: row.action_type,
+      playerAddress: row.player_address,
+      propertyId: row.property_id,
+      targetAddress: row.target_address,
+      amount: row.amount,
+      slots: row.slots,
+      success: row.success,
+      metadata: row.metadata ? JSON.parse(row.metadata) : null,
+      blockTime: row.block_time,
+      createdAt: row.created_at
+    }));
+    
+    res.json({ actions, count: actions.length });
+  });
 });
 
 // Get recent actions (for live feed)
 app.get('/api/actions/recent', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+  const actionType = req.query.type; // Optional filter
+
+  let query = `SELECT * FROM game_actions`;
+  const params = [];
+  
+  if (actionType) {
+    query += ` WHERE action_type = ?`;
+    params.push(actionType);
+  }
+  
+  query += ` ORDER BY block_time DESC LIMIT ?`;
+  params.push(limit);
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    const actions = rows.map(row => ({
+      id: row.id,
+      txSignature: row.tx_signature,
+      actionType: row.action_type,
+      playerAddress: row.player_address,
+      propertyId: row.property_id,
+      targetAddress: row.target_address,
+      amount: row.amount,
+      slots: row.slots,
+      success: row.success,
+      metadata: row.metadata ? JSON.parse(row.metadata) : null,
+      blockTime: row.block_time
+    }));
+    
+    res.json({ actions });
+  });
+});
+
+// Get actions for a specific property
+app.get('/api/actions/property/:propertyId', (req, res) => {
+  const { propertyId } = req.params;
+  const limit = Math.min(parseInt(req.query.limit) || 50, 200);
 
   db.all(
     `SELECT * FROM game_actions 
+     WHERE property_id = ?
      ORDER BY block_time DESC 
      LIMIT ?`,
-    [limit],
+    [propertyId, limit],
     (err, rows) => {
       if (err) {
         console.error('Database error:', err);
@@ -342,10 +413,134 @@ app.get('/api/actions/recent', (req, res) => {
         blockTime: row.block_time
       }));
       
-      res.json({ actions });
+      res.json({ actions, count: actions.length });
     }
   );
 });
+
+// ============================================
+// COOLDOWN SYSTEM (NEW)
+// ============================================
+
+// Get cooldown status for a player's set
+app.get('/api/cooldown/:wallet/:setId', (req, res) => {
+  const { wallet, setId } = req.params;
+  const setIdNum = parseInt(setId);
+
+  // Validate setId
+  if (isNaN(setIdNum) || setIdNum < 0 || setIdNum > 7) {
+    return res.status(400).json({ error: 'Invalid setId (must be 0-7)' });
+  }
+
+  const propertiesInSet = PROPERTY_SETS[setIdNum];
+  if (!propertiesInSet) {
+    return res.status(400).json({ error: 'Invalid set' });
+  }
+
+  const placeholders = propertiesInSet.map(() => '?').join(',');
+
+  // Get the most recent 'buy' action for any property in this set
+  db.get(
+    `SELECT property_id, block_time, tx_signature
+     FROM game_actions
+     WHERE player_address = ?
+       AND action_type = 'buy'
+       AND property_id IN (${placeholders})
+     ORDER BY block_time DESC
+     LIMIT 1`,
+    [wallet, ...propertiesInSet],
+    (err, row) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      // No purchases in this set yet
+      if (!row) {
+        return res.json({
+          isOnCooldown: false,
+          cooldownRemaining: 0,
+          lastPurchaseTimestamp: 0,
+          lastPurchasedPropertyId: null,
+          cooldownDuration: COOLDOWN_DURATION,
+          affectedPropertyIds: propertiesInSet,
+          setId: setIdNum
+        });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const elapsed = now - row.block_time;
+      const remaining = Math.max(0, COOLDOWN_DURATION - elapsed);
+
+      res.json({
+        isOnCooldown: remaining > 0,
+        cooldownRemaining: remaining,
+        lastPurchaseTimestamp: row.block_time,
+        lastPurchasedPropertyId: row.property_id,
+        cooldownDuration: COOLDOWN_DURATION,
+        affectedPropertyIds: propertiesInSet,
+        setId: setIdNum
+      });
+    }
+  );
+});
+
+// Get all active cooldowns for a player
+app.get('/api/cooldown/:wallet', (req, res) => {
+  const { wallet } = req.params;
+
+  const cooldowns = [];
+  let completed = 0;
+
+  // Check each set
+  Object.keys(PROPERTY_SETS).forEach((setId) => {
+    const propertiesInSet = PROPERTY_SETS[setId];
+    const placeholders = propertiesInSet.map(() => '?').join(',');
+
+    db.get(
+      `SELECT property_id, block_time
+       FROM game_actions
+       WHERE player_address = ?
+         AND action_type = 'buy'
+         AND property_id IN (${placeholders})
+       ORDER BY block_time DESC
+       LIMIT 1`,
+      [wallet, ...propertiesInSet],
+      (err, row) => {
+        if (err) {
+          console.error('Database error:', err);
+          return;
+        }
+
+        if (row) {
+          const now = Math.floor(Date.now() / 1000);
+          const elapsed = now - row.block_time;
+          const remaining = Math.max(0, COOLDOWN_DURATION - elapsed);
+
+          if (remaining > 0) {
+            cooldowns.push({
+              setId: parseInt(setId),
+              isOnCooldown: true,
+              cooldownRemaining: remaining,
+              lastPurchaseTimestamp: row.block_time,
+              lastPurchasedPropertyId: row.property_id,
+              affectedPropertyIds: propertiesInSet
+            });
+          }
+        }
+
+        completed++;
+        if (completed === Object.keys(PROPERTY_SETS).length) {
+          res.json({ cooldowns, activeCooldowns: cooldowns.length });
+        }
+      }
+    );
+  });
+});
+
+// ============================================
+// PLAYER STATS ENDPOINTS
+// ============================================
 
 // Get player stats
 app.get('/api/stats/:wallet', (req, res) => {
@@ -395,7 +590,7 @@ app.get('/api/stats/:wallet', (req, res) => {
 
 // Leaderboard endpoint
 app.get('/api/leaderboard', (req, res) => {
-  const type = req.query.type || 'actions'; // actions, steals, bought
+  const type = req.query.type || 'actions';
   const limit = Math.min(parseInt(req.query.limit) || 10, 100);
 
   let orderBy;
@@ -405,6 +600,12 @@ app.get('/api/leaderboard', (req, res) => {
       break;
     case 'bought':
       orderBy = 'properties_bought DESC';
+      break;
+    case 'earned':
+      orderBy = 'total_earned DESC';
+      break;
+    case 'spent':
+      orderBy = 'total_spent DESC';
       break;
     default:
       orderBy = 'total_actions DESC';
@@ -428,7 +629,9 @@ app.get('/api/leaderboard', (req, res) => {
         propertiesBought: row.properties_bought,
         successfulSteals: row.successful_steals,
         failedSteals: row.failed_steals,
-        rewardsClaimed: row.rewards_claimed
+        rewardsClaimed: row.rewards_claimed,
+        totalSpent: row.total_spent,
+        totalEarned: row.total_earned
       }));
       
       res.json({ leaderboard });
@@ -436,7 +639,10 @@ app.get('/api/leaderboard', (req, res) => {
   );
 });
 
-// Helper function to update player stats
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
 function updatePlayerStats(playerAddress, actionType, amount) {
   db.run(
     `INSERT INTO player_stats (wallet_address, total_actions, last_action_time)
@@ -491,9 +697,27 @@ function updatePlayerStats(playerAddress, actionType, amount) {
   }
 }
 
-// Health check
+// ============================================
+// HEALTH & UTILITY ENDPOINTS
+// ============================================
+
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: Date.now(),
+    version: '2.0.0',
+    features: ['profiles', 'actions', 'cooldowns', 'stats', 'leaderboard']
+  });
+});
+
+// Get game constants (useful for frontend)
+app.get('/api/game/constants', (req, res) => {
+  res.json({
+    propertySets: PROPERTY_SETS,
+    cooldownDuration: COOLDOWN_DURATION,
+    totalProperties: 22,
+    totalSets: 8
+  });
 });
 
 // ============================================
@@ -501,17 +725,31 @@ app.get('/health', (req, res) => {
 // ============================================
 
 app.listen(PORT, () => {
-  console.log(`🚀 Defipoly API running on port ${PORT}`);
+  console.log(`🚀 Defipoly API v2.0 running on port ${PORT}`);
   console.log(`📊 Database: SQLite (defipoly.db)`);
   console.log(`✅ Profile storage enabled`);
-  console.log(`✅ Game actions storage enabled`);
+  console.log(`✅ Game actions tracking enabled`);
+  console.log(`✅ Cooldown system enabled`);
+  console.log(`✅ Player stats & leaderboard enabled`);
+  console.log(`\n📡 Available endpoints:`);
+  console.log(`   GET  /health`);
+  console.log(`   GET  /api/game/constants`);
+  console.log(`   GET  /api/cooldown/:wallet/:setId`);
+  console.log(`   GET  /api/cooldown/:wallet`);
+  console.log(`   GET  /api/stats/:wallet`);
+  console.log(`   GET  /api/leaderboard`);
+  console.log(`   GET  /api/actions/recent`);
+  console.log(`   GET  /api/actions/player/:wallet`);
+  console.log(`   GET  /api/actions/property/:propertyId`);
+  console.log(`   POST /api/actions`);
+  console.log(`   POST /api/actions/batch`);
 });
 
 // Graceful shutdown
 process.on('SIGINT', () => {
   db.close((err) => {
     if (err) console.error(err);
-    console.log('Database connection closed');
+    console.log('\n✅ Database connection closed');
     process.exit(0);
   });
 });
