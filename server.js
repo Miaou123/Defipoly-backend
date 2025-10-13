@@ -19,19 +19,43 @@ app.use(express.json({ limit: '10mb' }));
 // ============================================
 
 // Property set mappings - MUST match your frontend PROPERTIES constant
-const PROPERTY_SETS = {
-  0: [0, 1],           // Brown: Mediterranean Avenue, Baltic Avenue
-  1: [2, 3, 4],        // Light Blue: Oriental Avenue, Vermont Avenue, Connecticut Avenue
-  2: [5, 6, 7],        // Pink: St. Charles Place, States Avenue, Virginia Avenue
-  3: [8, 9, 10],       // Orange: St. James Place, Tennessee Avenue, New York Avenue
-  4: [11, 12, 13],     // Red: Kentucky Avenue, Indiana Avenue, Illinois Avenue
-  5: [14, 15, 16],     // Yellow: Atlantic Avenue, Ventnor Avenue, Marvin Gardens
-  6: [17, 18, 19],     // Green: Pacific Avenue, North Carolina Avenue, Pennsylvania Avenue
-  7: [20, 21]          // Dark Blue: Park Place, Boardwalk
-};
+const PROPERTIES = [
+  // Set 0 - Brown
+  { id: 0, setId: 0, price: 1000000000000, yieldBps: 100 },      // Mediterranean
+  { id: 1, setId: 0, price: 1200000000000, yieldBps: 100 },      // Baltic
+  // Set 1 - Light Blue
+  { id: 2, setId: 1, price: 2500000000000, yieldBps: 120 },      // Oriental
+  { id: 3, setId: 1, price: 2500000000000, yieldBps: 120 },      // Vermont
+  { id: 4, setId: 1, price: 3000000000000, yieldBps: 120 },      // Connecticut
+  // Set 2 - Pink
+  { id: 5, setId: 2, price: 3500000000000, yieldBps: 140 },      // St. Charles
+  { id: 6, setId: 2, price: 3500000000000, yieldBps: 140 },      // States
+  { id: 7, setId: 2, price: 4000000000000, yieldBps: 140 },      // Virginia
+  // Set 3 - Orange
+  { id: 8, setId: 3, price: 4500000000000, yieldBps: 160 },      // St. James
+  { id: 9, setId: 3, price: 4500000000000, yieldBps: 160 },      // Tennessee
+  { id: 10, setId: 3, price: 5000000000000, yieldBps: 160 },     // New York
+  // Set 4 - Red
+  { id: 11, setId: 4, price: 5500000000000, yieldBps: 180 },     // Kentucky
+  { id: 12, setId: 4, price: 5500000000000, yieldBps: 180 },     // Indiana
+  { id: 13, setId: 4, price: 6000000000000, yieldBps: 180 },     // Illinois
+  // Set 5 - Yellow
+  { id: 14, setId: 5, price: 6500000000000, yieldBps: 200 },     // Atlantic
+  { id: 15, setId: 5, price: 6500000000000, yieldBps: 200 },     // Ventnor
+  { id: 16, setId: 5, price: 7000000000000, yieldBps: 200 },     // Marvin Gardens
+  // Set 6 - Green
+  { id: 17, setId: 6, price: 7500000000000, yieldBps: 220 },     // Pacific
+  { id: 18, setId: 6, price: 7500000000000, yieldBps: 220 },     // North Carolina
+  { id: 19, setId: 6, price: 8000000000000, yieldBps: 220 },     // Pennsylvania
+  // Set 7 - Dark Blue
+  { id: 20, setId: 7, price: 10000000000000, yieldBps: 250 },    // Park Place
+  { id: 21, setId: 7, price: 12000000000000, yieldBps: 250 },    // Boardwalk
+];
 
-// Cooldown duration: 24 hours in seconds
-const COOLDOWN_DURATION = 86400;
+const SET_BONUS_BPS = 4000;
+
+// Cooldown duration: 12 hours in seconds
+const COOLDOWN_DURATION = 43200;
 
 // Initialize SQLite database
 const db = new sqlite3.Database('./defipoly.db', (err) => {
@@ -50,11 +74,13 @@ const db = new sqlite3.Database('./defipoly.db', (err) => {
 function initDatabase() {
   // Profiles table
   db.run(`
-    CREATE TABLE IF NOT EXISTS profiles (
-      wallet_address TEXT PRIMARY KEY,
-      username TEXT,
-      profile_picture TEXT,
-      updated_at INTEGER
+    CREATE TABLE IF NOT EXISTS property_ownership (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      wallet_address TEXT NOT NULL,
+      property_id INTEGER NOT NULL,
+      slots_owned INTEGER DEFAULT 0,
+      last_updated INTEGER DEFAULT (strftime('%s', 'now')),
+      UNIQUE(wallet_address, property_id)
     )
   `, (err) => {
     if (err) console.error('Error creating profiles table:', err);
@@ -87,6 +113,24 @@ function initDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_actions_type_time ON game_actions(action_type, block_time DESC)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_actions_property_time ON game_actions(property_id, block_time DESC)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_actions_player_type_property ON game_actions(player_address, action_type, property_id)`);
+
+    // Property ownership tracking
+    db.run(`
+    CREATE TABLE IF NOT EXISTS property_ownership (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      wallet_address TEXT NOT NULL,
+      property_id INTEGER NOT NULL,
+      slots_owned INTEGER DEFAULT 0,
+      last_updated INTEGER DEFAULT (strftime('%s', 'now')),
+      UNIQUE(wallet_address, property_id)
+    )
+  `, (err) => {
+    if (err) console.error('Error creating property_ownership table:', err);
+    else console.log('✅ Property ownership table ready');
+  });
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_ownership_wallet ON property_ownership(wallet_address)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_ownership_property ON property_ownership(property_id)`);
   
   // Player stats table
   db.run(`
@@ -102,6 +146,7 @@ function initDatabase() {
       total_spent INTEGER DEFAULT 0,
       total_earned INTEGER DEFAULT 0,
       total_slots_owned INTEGER DEFAULT 0,
+      daily_income INTEGER DEFAULT 0,
       last_action_time INTEGER,
       updated_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
@@ -109,13 +154,12 @@ function initDatabase() {
     if (err) console.error('Error creating player_stats table:', err);
     else console.log('✅ Player stats table ready');
   });
-  // ✅ Add the column if it doesn't exist (for existing databases)
-  db.run(`ALTER TABLE player_stats ADD COLUMN total_slots_owned INTEGER DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding total_slots_owned column:', err);
-    }
-  });
+
+  // Add columns if they don't exist
+  db.run(`ALTER TABLE player_stats ADD COLUMN total_slots_owned INTEGER DEFAULT 0`, () => {});
+  db.run(`ALTER TABLE player_stats ADD COLUMN daily_income INTEGER DEFAULT 0`, () => {});
 }
+
 
 // ============================================
 // PROFILE ENDPOINTS
@@ -224,7 +268,7 @@ app.post('/api/actions', (req, res) => {
     slots,
     success,
     metadata,
-    blockTime
+    blockTime,
   } = req.body;
 
   if (!txSignature || !actionType || !playerAddress || !blockTime) {
@@ -247,13 +291,11 @@ app.post('/api/actions', (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // Update player stats asynchronously
       if (this.changes > 0) {
-        updatePlayerStats(playerAddress, actionType, amount, slots);
+        updatePlayerStats(playerAddress, actionType, amount, slots, propertyId);
         
-        // If it's a successful steal, update the target's slots too
-        if (actionType === 'steal_success' && targetAddress && slots) {
-          updateTargetStatsOnSteal(targetAddress, slots);
+        if (actionType === 'steal_success' && targetAddress && slots && propertyId !== undefined) {
+          updateTargetOnSteal(targetAddress, propertyId, slots);
         }
       }
 
@@ -602,37 +644,17 @@ app.get('/api/stats/:wallet', (req, res) => {
   );
 });
 
+// ============================================
+// LEADERBOARD ENDPOINT - BY DAILY INCOME ONLY
+// ============================================
 
-// Leaderboard endpoint
 app.get('/api/leaderboard', (req, res) => {
-  const type = req.query.type || 'slots'; // Default to slots
   const limit = Math.min(parseInt(req.query.limit) || 10, 100);
-
-  let orderBy;
-  switch(type) {
-    case 'slots':
-      orderBy = 'total_slots_owned DESC';
-      break;
-    case 'steals':
-      orderBy = 'successful_steals DESC';
-      break;
-    case 'bought':
-      orderBy = 'properties_bought DESC';
-      break;
-    case 'earned':
-      orderBy = 'total_earned DESC';
-      break;
-    case 'spent':
-      orderBy = 'total_spent DESC';
-      break;
-    default:
-      orderBy = 'total_actions DESC';
-  }
 
   db.all(
     `SELECT * FROM player_stats 
-     WHERE total_actions > 0
-     ORDER BY ${orderBy}
+     WHERE total_actions > 0 AND daily_income > 0
+     ORDER BY daily_income DESC
      LIMIT ?`,
     [limit],
     (err, rows) => {
@@ -643,14 +665,10 @@ app.get('/api/leaderboard', (req, res) => {
       
       const leaderboard = rows.map(row => ({
         walletAddress: row.wallet_address,
-        totalActions: row.total_actions,
-        propertiesBought: row.properties_bought,
+        dailyIncome: row.daily_income,
         totalSlotsOwned: row.total_slots_owned,
-        successfulSteals: row.successful_steals,
-        failedSteals: row.failed_steals,
-        rewardsClaimed: row.rewards_claimed,
-        totalSpent: row.total_spent,
-        totalEarned: row.total_earned
+        propertiesBought: row.properties_bought,
+        totalEarned: row.total_earned,
       }));
       
       res.json({ leaderboard });
@@ -659,10 +677,122 @@ app.get('/api/leaderboard', (req, res) => {
 });
 
 // ============================================
+// DAILY INCOME CALCULATION
+// ============================================
+
+/**
+ * Calculate a player's actual daily income with set bonuses
+ */
+function calculateDailyIncome(walletAddress, callback) {
+  // Get all properties owned by this player
+  db.all(
+    `SELECT property_id, slots_owned FROM property_ownership 
+     WHERE wallet_address = ? AND slots_owned > 0`,
+    [walletAddress],
+    (err, ownerships) => {
+      if (err || !ownerships || ownerships.length === 0) {
+        return callback(0);
+      }
+
+      // Group by set
+      const setData = {};
+      for (let i = 0; i < 8; i++) {
+        setData[i] = { properties: [], totalSlots: 0, minSlots: Infinity };
+      }
+
+      // Process each ownership
+      ownerships.forEach(own => {
+        const property = PROPERTIES.find(p => p.id === own.property_id);
+        if (!property) return;
+
+        const setId = property.setId;
+        setData[setId].properties.push({
+          propertyId: own.property_id,
+          slots: own.slots_owned,
+          dailyIncomePerSlot: (property.price * property.yieldBps) / 10000
+        });
+        setData[setId].totalSlots += own.slots_owned;
+        setData[setId].minSlots = Math.min(setData[setId].minSlots, own.slots_owned);
+      });
+
+      // Calculate total daily income
+      let totalDailyIncome = 0;
+
+      Object.keys(setData).forEach(setId => {
+        const set = setData[setId];
+        if (set.properties.length === 0) return;
+
+        const requiredProperties = getPropertiesInSet(parseInt(setId));
+        const hasCompleteSet = set.properties.length >= requiredProperties;
+
+        set.properties.forEach(prop => {
+          const baseDailyIncome = prop.dailyIncomePerSlot * prop.slots;
+
+          if (hasCompleteSet && set.minSlots > 0) {
+            // Split into bonus and non-bonus slots
+            const bonusSlots = Math.min(prop.slots, set.minSlots);
+            const baseSlots = prop.slots - bonusSlots;
+
+            // Base slots get normal income
+            const baseIncome = baseSlots * prop.dailyIncomePerSlot;
+
+            // Bonus slots get 40% extra
+            const bonusIncome = bonusSlots * prop.dailyIncomePerSlot * (10000 + SET_BONUS_BPS) / 10000;
+
+            totalDailyIncome += baseIncome + bonusIncome;
+          } else {
+            // No set bonus
+            totalDailyIncome += baseDailyIncome;
+          }
+        });
+      });
+
+      callback(Math.floor(totalDailyIncome));
+    }
+  );
+}
+
+/**
+ * Update property ownership and recalculate daily income
+ */
+function updatePropertyOwnership(walletAddress, propertyId, slotsDelta, callback) {
+  db.run(
+    `INSERT INTO property_ownership (wallet_address, property_id, slots_owned, last_updated)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(wallet_address, property_id) 
+     DO UPDATE SET 
+       slots_owned = slots_owned + ?,
+       last_updated = ?`,
+    [walletAddress, propertyId, slotsDelta, Date.now(), slotsDelta, Date.now()],
+    (err) => {
+      if (err) {
+        console.error('Error updating property ownership:', err);
+        if (callback) callback(err);
+        return;
+      }
+
+      // Recalculate and update daily income
+      calculateDailyIncome(walletAddress, (dailyIncome) => {
+        db.run(
+          `UPDATE player_stats SET daily_income = ? WHERE wallet_address = ?`,
+          [dailyIncome, walletAddress],
+          (err) => {
+            if (err) console.error('Error updating daily income:', err);
+            if (callback) callback(null, dailyIncome);
+          }
+        );
+      });
+    }
+  );
+}
+
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
-function updatePlayerStats(playerAddress, actionType, amount, slots) {
+function updatePlayerStats(playerAddress, actionType, amount, slots, propertyId) {
+  // Insert or increment total actions
   db.run(
     `INSERT INTO player_stats (wallet_address, total_actions, last_action_time)
      VALUES (?, 1, ?)
@@ -671,10 +801,7 @@ function updatePlayerStats(playerAddress, actionType, amount, slots) {
        total_actions = total_actions + 1,
        last_action_time = ?,
        updated_at = strftime('%s', 'now')`,
-    [playerAddress, Date.now(), Date.now()],
-    (err) => {
-      if (err) console.error('Error updating player stats:', err);
-    }
+    [playerAddress, Date.now(), Date.now()]
   );
 
   let updateField = null;
@@ -687,29 +814,49 @@ function updatePlayerStats(playerAddress, actionType, amount, slots) {
         updateField += `, total_slots_owned = total_slots_owned + ${slots}`;
       }
       spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
+
+      // Update property ownership and daily income
+      if (propertyId !== undefined && slots) {
+        updatePropertyOwnership(playerAddress, propertyId, slots);
+      }
       break;
+
     case 'sell':
       updateField = 'properties_sold = properties_sold + 1';
       if (slots) {
         updateField += `, total_slots_owned = total_slots_owned - ${slots}`;
       }
       spentEarned = amount ? `total_earned = total_earned + ${amount}` : null;
+
+      // Update property ownership and daily income
+      if (propertyId !== undefined && slots) {
+        updatePropertyOwnership(playerAddress, propertyId, -slots);
+      }
       break;
+
     case 'steal_success':
       updateField = 'successful_steals = successful_steals + 1';
       if (slots) {
         updateField += `, total_slots_owned = total_slots_owned + ${slots}`;
       }
       spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
+
+      // Update property ownership and daily income
+      if (propertyId !== undefined && slots) {
+        updatePropertyOwnership(playerAddress, propertyId, slots);
+      }
       break;
-    case 'steal_fail':
+
+    case 'steal_failed':
       updateField = 'failed_steals = failed_steals + 1';
       spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
       break;
+
     case 'claim':
       updateField = 'rewards_claimed = rewards_claimed + 1';
       spentEarned = amount ? `total_earned = total_earned + ${amount}` : null;
       break;
+
     case 'shield':
       updateField = 'shields_activated = shields_activated + 1';
       spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
@@ -721,23 +868,26 @@ function updatePlayerStats(playerAddress, actionType, amount, slots) {
       ? `UPDATE player_stats SET ${updateField}, ${spentEarned} WHERE wallet_address = ?`
       : `UPDATE player_stats SET ${updateField} WHERE wallet_address = ?`;
     
-    db.run(updateSql, [playerAddress], (err) => {
-      if (err) console.error('Error updating specific stats:', err);
-    });
+    db.run(updateSql, [playerAddress]);
   }
 }
 
-function updateTargetStatsOnSteal(targetAddress, slots) {
+/**
+ * Update target player when they lose slots from steal
+ */
+function updateTargetOnSteal(targetAddress, propertyId, slots) {
+  if (propertyId !== undefined && slots) {
+    updatePropertyOwnership(targetAddress, propertyId, -slots);
+  }
+  
   db.run(
     `UPDATE player_stats 
      SET total_slots_owned = total_slots_owned - ?
      WHERE wallet_address = ?`,
-    [slots, targetAddress],
-    (err) => {
-      if (err) console.error('Error updating target stats:', err);
-    }
+    [slots, targetAddress]
   );
 }
+
 
 // ============================================
 // HEALTH & UTILITY ENDPOINTS
@@ -760,6 +910,29 @@ app.get('/api/game/constants', (req, res) => {
     totalProperties: 22,
     totalSets: 8
   });
+});
+
+
+// ============================================
+// GET PLAYER OWNERSHIP DETAILS
+// ============================================
+
+app.get('/api/ownership/:wallet', (req, res) => {
+  const { wallet } = req.params;
+
+  db.all(
+    `SELECT property_id, slots_owned FROM property_ownership 
+     WHERE wallet_address = ? AND slots_owned > 0`,
+    [wallet],
+    (err, rows) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json({ ownerships: rows });
+    }
+  );
 });
 
 // ============================================
