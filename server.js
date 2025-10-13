@@ -101,12 +101,19 @@ function initDatabase() {
       shields_activated INTEGER DEFAULT 0,
       total_spent INTEGER DEFAULT 0,
       total_earned INTEGER DEFAULT 0,
+      total_slots_owned INTEGER DEFAULT 0,
       last_action_time INTEGER,
       updated_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `, (err) => {
     if (err) console.error('Error creating player_stats table:', err);
     else console.log('✅ Player stats table ready');
+  });
+  // ✅ Add the column if it doesn't exist (for existing databases)
+  db.run(`ALTER TABLE player_stats ADD COLUMN total_slots_owned INTEGER DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding total_slots_owned column:', err);
+    }
   });
 }
 
@@ -242,7 +249,12 @@ app.post('/api/actions', (req, res) => {
 
       // Update player stats asynchronously
       if (this.changes > 0) {
-        updatePlayerStats(playerAddress, actionType, amount);
+        updatePlayerStats(playerAddress, actionType, amount, slots);
+        
+        // If it's a successful steal, update the target's slots too
+        if (actionType === 'steal_success' && targetAddress && slots) {
+          updateTargetStatsOnSteal(targetAddress, slots);
+        }
       }
 
       res.json({ success: true, id: this.lastID });
@@ -566,7 +578,8 @@ app.get('/api/stats/:wallet', (req, res) => {
           rewardsClaimed: 0,
           shieldsActivated: 0,
           totalSpent: 0,
-          totalEarned: 0
+          totalEarned: 0,
+          totalSlotsOwned: 0
         });
       }
       
@@ -581,6 +594,7 @@ app.get('/api/stats/:wallet', (req, res) => {
         shieldsActivated: row.shields_activated,
         totalSpent: row.total_spent,
         totalEarned: row.total_earned,
+        totalSlotsOwned: row.total_slots_owned,
         lastActionTime: row.last_action_time,
         updatedAt: row.updated_at
       });
@@ -588,13 +602,17 @@ app.get('/api/stats/:wallet', (req, res) => {
   );
 });
 
+
 // Leaderboard endpoint
 app.get('/api/leaderboard', (req, res) => {
-  const type = req.query.type || 'actions';
+  const type = req.query.type || 'slots'; // Default to slots
   const limit = Math.min(parseInt(req.query.limit) || 10, 100);
 
   let orderBy;
   switch(type) {
+    case 'slots':
+      orderBy = 'total_slots_owned DESC';
+      break;
     case 'steals':
       orderBy = 'successful_steals DESC';
       break;
@@ -627,6 +645,7 @@ app.get('/api/leaderboard', (req, res) => {
         walletAddress: row.wallet_address,
         totalActions: row.total_actions,
         propertiesBought: row.properties_bought,
+        totalSlotsOwned: row.total_slots_owned,
         successfulSteals: row.successful_steals,
         failedSteals: row.failed_steals,
         rewardsClaimed: row.rewards_claimed,
@@ -643,11 +662,12 @@ app.get('/api/leaderboard', (req, res) => {
 // HELPER FUNCTIONS
 // ============================================
 
-function updatePlayerStats(playerAddress, actionType, amount) {
+function updatePlayerStats(playerAddress, actionType, amount, slots) {
   db.run(
     `INSERT INTO player_stats (wallet_address, total_actions, last_action_time)
      VALUES (?, 1, ?)
-     ON CONFLICT(wallet_address) DO UPDATE SET
+     ON CONFLICT(wallet_address) 
+     DO UPDATE SET 
        total_actions = total_actions + 1,
        last_action_time = ?,
        updated_at = strftime('%s', 'now')`,
@@ -657,24 +677,34 @@ function updatePlayerStats(playerAddress, actionType, amount) {
     }
   );
 
-  // Update specific stats based on action type
   let updateField = null;
   let spentEarned = null;
 
-  switch(actionType) {
+  switch (actionType) {
     case 'buy':
       updateField = 'properties_bought = properties_bought + 1';
+      if (slots) {
+        updateField += `, total_slots_owned = total_slots_owned + ${slots}`;
+      }
       spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
       break;
     case 'sell':
       updateField = 'properties_sold = properties_sold + 1';
+      if (slots) {
+        updateField += `, total_slots_owned = total_slots_owned - ${slots}`;
+      }
       spentEarned = amount ? `total_earned = total_earned + ${amount}` : null;
       break;
     case 'steal_success':
       updateField = 'successful_steals = successful_steals + 1';
+      if (slots) {
+        updateField += `, total_slots_owned = total_slots_owned + ${slots}`;
+      }
+      spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
       break;
-    case 'steal_failed':
+    case 'steal_fail':
       updateField = 'failed_steals = failed_steals + 1';
+      spentEarned = amount ? `total_spent = total_spent + ${amount}` : null;
       break;
     case 'claim':
       updateField = 'rewards_claimed = rewards_claimed + 1';
@@ -695,6 +725,18 @@ function updatePlayerStats(playerAddress, actionType, amount) {
       if (err) console.error('Error updating specific stats:', err);
     });
   }
+}
+
+function updateTargetStatsOnSteal(targetAddress, slots) {
+  db.run(
+    `UPDATE player_stats 
+     SET total_slots_owned = total_slots_owned - ?
+     WHERE wallet_address = ?`,
+    [slots, targetAddress],
+    (err) => {
+      if (err) console.error('Error updating target stats:', err);
+    }
+  );
 }
 
 // ============================================
