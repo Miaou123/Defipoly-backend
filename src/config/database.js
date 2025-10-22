@@ -137,10 +137,11 @@ function createIndexes() {
     db.run(`CREATE INDEX IF NOT EXISTS idx_actions_player_type_property ON game_actions(player_address, action_type, property_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_ownership_wallet ON property_ownership(wallet_address)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_ownership_property ON property_ownership(property_id)`);
-
-    // Add columns if they don't exist (for backward compatibility)
     db.run(`ALTER TABLE player_stats ADD COLUMN total_slots_owned INTEGER DEFAULT 0`, () => {});
     db.run(`ALTER TABLE player_stats ADD COLUMN daily_income INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE property_ownership ADD COLUMN slots_shielded INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE property_ownership ADD COLUMN shield_expiry INTEGER DEFAULT 0`, () => {});
+
 
     console.log('✅ Database indexes created');
     resolve();

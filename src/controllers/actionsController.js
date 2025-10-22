@@ -1,5 +1,5 @@
 const { getDatabase } = require('../config/database');
-const { updatePlayerStats, updateTargetOnSteal } = require('../services/gameService');
+const { updatePlayerStats, updateTargetOnSteal, updatePropertyOwnershipShield } = require('../services/gameService');
 
 const storeAction = (req, res) => {
   const {
@@ -38,6 +38,10 @@ const storeAction = (req, res) => {
 
       if (this.changes > 0) {
         updatePlayerStats(playerAddress, actionType, amount, slots, propertyId);
+
+        if (actionType === 'shield' && propertyId !== undefined) {
+          updatePropertyOwnershipShield(playerAddress, propertyId, slots, metadata);
+        }
         
         if (actionType === 'steal_success' && targetAddress && slots && propertyId !== undefined) {
           updateTargetOnSteal(targetAddress, propertyId, slots);

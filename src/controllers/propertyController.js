@@ -1,19 +1,12 @@
-// ============================================
-// FILE: src/controllers/propertyController.js
-// Add this new controller to your backend
-// ============================================
-
 const { getDatabase } = require('../config/database');
 
 /**
  * Get property statistics including number of owners with unshielded slots
- * This is useful for the steal functionality UI
  */
 const getPropertyStats = (req, res) => {
   const { propertyId } = req.params;
   const db = getDatabase();
 
-  // Query to count unique owners with unshielded slots for this property
   db.get(
     `SELECT 
       COUNT(DISTINCT wallet_address) as owners_with_unshielded_slots
@@ -38,7 +31,6 @@ const getPropertyStats = (req, res) => {
 
 /**
  * Get all property stats (for all 22 properties at once)
- * More efficient than calling individually
  */
 const getAllPropertiesStats = (req, res) => {
   const db = getDatabase();
@@ -58,7 +50,6 @@ const getAllPropertiesStats = (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
       
-      // Create a map for easy lookup
       const stats = {};
       rows.forEach(row => {
         stats[row.property_id] = {

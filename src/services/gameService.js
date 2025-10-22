@@ -141,8 +141,33 @@ function updateTargetOnSteal(targetAddress, propertyId, slots) {
   );
 }
 
+/**
+ * Update property ownership shield data
+ */
+function updatePropertyOwnershipShield(playerAddress, propertyId, slotsShielded, metadata) {
+  const db = getDatabase();
+  const shieldExpiry = metadata?.expiry || (Math.floor(Date.now() / 1000) + 48 * 3600);
+  
+  db.run(`
+    UPDATE property_ownership
+    SET slots_shielded = ?,
+        shield_expiry = ?,
+        updated_at = strftime('%s', 'now')
+    WHERE wallet_address = ? AND property_id = ?
+  `, [slotsShielded, shieldExpiry, playerAddress, propertyId],
+  (err) => {
+    if (err) {
+      console.error('Error updating property ownership shield:', err);
+    } else {
+      console.log(`✅ Updated shield: ${slotsShielded} slots for property ${propertyId}`);
+    }
+  });
+}
+
+
 module.exports = {
   updatePropertyOwnership,
   updatePlayerStats,
-  updateTargetOnSteal
+  updateTargetOnSteal,
+  updatePropertyOwnershipShield
 };
