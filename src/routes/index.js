@@ -8,6 +8,7 @@ const cooldownRouter = require('./cooldown');
 const statsRouter = require('./stats');
 const leaderboardRouter = require('./leaderboard');
 const gameRouter = require('./game');
+const propertiesRouter = require('./properties');
 
 // Mount routes
 router.use('/profile', profilesRouter);
@@ -17,6 +18,7 @@ router.use('/cooldown', cooldownRouter);
 router.use('/stats', statsRouter);
 router.use('/leaderboard', leaderboardRouter);
 router.use('/game', gameRouter);
+router.use('/properties', propertiesRouter);
 
 // Special routes that need custom paths
 const { getPlayerOwnership } = require('../controllers/statsController');
