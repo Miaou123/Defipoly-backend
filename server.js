@@ -57,6 +57,8 @@ async function startServer() {
       console.log(`   POST /api/profiles/batch`);
       console.log(`   GET  /api/cooldown/:wallet/:setId`);
       console.log(`   GET  /api/cooldown/:wallet`);
+      console.log(`   GET  /api/steal-cooldown/:wallet/:propertyId`); 
+      console.log(`   GET  /api/steal-cooldown/:wallet`); 
       console.log(`   GET  /api/stats/:wallet`);
       console.log(`   GET  /api/ownership/:wallet`);
       console.log(`   GET  /api/leaderboard`);

@@ -1,56 +1,64 @@
 const { getDatabase } = require('../config/database');
-const { updatePlayerStats, updateTargetOnSteal, updatePropertyOwnershipShield } = require('../services/gameService');
+const { updatePlayerStats } = require('../services/playerStatsService');
 
 const storeAction = (req, res) => {
-  const {
-    txSignature,
-    actionType,
-    playerAddress,
-    propertyId,
-    targetAddress,
-    amount,
-    slots,
-    success,
-    metadata,
-    blockTime,
-  } = req.body;
+  const action = req.body;
+  
+  console.log('📥 [STORE ACTION] Received action:', JSON.stringify(action, null, 2));
 
-  if (!txSignature || !actionType || !playerAddress || !blockTime) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!action.txSignature || !action.actionType || !action.playerAddress) {
+    console.error('❌ [STORE ACTION] Missing required fields');
+    return res.status(400).json({ 
+      error: 'Missing required fields: txSignature, actionType, playerAddress' 
+    });
   }
 
   const db = getDatabase();
-  const metadataJson = metadata ? JSON.stringify(metadata) : null;
+  const metadata = action.metadata ? JSON.stringify(action.metadata) : null;
 
-  db.run(
-    `INSERT INTO game_actions 
-     (tx_signature, action_type, player_address, property_id, target_address, 
-      amount, slots, success, metadata, block_time)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(tx_signature) DO NOTHING`,
-    [txSignature, actionType, playerAddress, propertyId, targetAddress, 
-     amount, slots, success, metadataJson, blockTime],
-    function(err) {
-      if (err) {
-        console.error('Error storing action:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+  const query = `INSERT INTO game_actions 
+    (tx_signature, action_type, player_address, property_id, target_address, amount, slots, success, metadata, block_time)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(tx_signature) DO NOTHING`;
 
-      if (this.changes > 0) {
-        updatePlayerStats(playerAddress, actionType, amount, slots, propertyId);
+  const params = [
+    action.txSignature,
+    action.actionType,
+    action.playerAddress,
+    action.propertyId || null,
+    action.targetAddress || null,
+    action.amount || null,
+    action.slots || null,
+    action.success !== undefined ? action.success : null,
+    metadata,
+    action.blockTime
+  ];
 
-        if (actionType === 'shield' && propertyId !== undefined) {
-          updatePropertyOwnershipShield(playerAddress, propertyId, slots, metadata);
-        }
-        
-        if (actionType === 'steal_success' && targetAddress && slots && propertyId !== undefined) {
-          updateTargetOnSteal(targetAddress, propertyId, slots);
-        }
-      }
+  console.log('📝 [STORE ACTION] Query:', query);
+  console.log('📝 [STORE ACTION] Params:', params);
 
-      res.json({ success: true, id: this.lastID });
+  db.run(query, params, function(err) {
+    if (err) {
+      console.error('❌ [STORE ACTION] Database error:', err);
+      return res.status(500).json({ error: 'Database error', details: err.message });
     }
-  );
+
+    console.log(`✅ [STORE ACTION] Inserted/Ignored action. Changes: ${this.changes}, Last ID: ${this.lastID}`);
+
+    if (this.changes > 0) {
+      updatePlayerStats(action.playerAddress, action.actionType, action.amount);
+      console.log(`📊 [STORE ACTION] Updated player stats for ${action.playerAddress}`);
+    } else {
+      console.log(`ℹ️  [STORE ACTION] Action already exists (tx_signature conflict)`);
+    }
+
+    res.json({ 
+      success: true, 
+      inserted: this.changes > 0,
+      actionType: action.actionType,
+      txSignature: action.txSignature
+    });
+  });
 };
 
 const storeActionsBatch = (req, res) => {
@@ -63,8 +71,7 @@ const storeActionsBatch = (req, res) => {
   const db = getDatabase();
   const stmt = db.prepare(`
     INSERT INTO game_actions 
-    (tx_signature, action_type, player_address, property_id, target_address, 
-     amount, slots, success, metadata, block_time)
+    (tx_signature, action_type, player_address, property_id, target_address, amount, slots, success, metadata, block_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(tx_signature) DO NOTHING
   `);

@@ -9,6 +9,8 @@ function getStealCooldownForProperty(wallet, propertyId, callback) {
   const db = getDatabase();
   const propIdNum = parseInt(propertyId);
 
+  console.log(`🔍 [STEAL COOLDOWN] Checking cooldown for wallet: ${wallet}, propertyId: ${propIdNum}`);
+
   if (isNaN(propIdNum) || propIdNum < 0 || propIdNum > 21) {
     return callback(new Error('Invalid propertyId (must be 0-21)'), null);
   }
@@ -23,23 +25,29 @@ function getStealCooldownForProperty(wallet, propertyId, callback) {
   const buyCooldownSeconds = property.cooldownHours * 3600;
   const stealCooldownDuration = buyCooldownSeconds / 2;
 
+  console.log(`⏱️  [STEAL COOLDOWN] Cooldown duration for property ${propIdNum}: ${stealCooldownDuration}s (${stealCooldownDuration/3600}h)`);
+
   // Get the most recent steal attempt (success OR failure) for THIS specific property
-  db.get(
-    `SELECT property_id, block_time, tx_signature, action_type
+  const query = `SELECT property_id, block_time, tx_signature, action_type
      FROM game_actions
      WHERE player_address = ?
        AND (action_type = 'steal_success' OR action_type = 'steal_failed')
        AND property_id = ?
      ORDER BY block_time DESC
-     LIMIT 1`,
-    [wallet, propIdNum],
-    (err, row) => {
+     LIMIT 1`;
+  
+  console.log(`📝 [STEAL COOLDOWN] Query:`, query);
+  console.log(`📝 [STEAL COOLDOWN] Params:`, [wallet, propIdNum]);
+
+  db.get(query, [wallet, propIdNum], (err, row) => {
       if (err) {
+        console.error(`❌ [STEAL COOLDOWN] Database error:`, err);
         return callback(err, null);
       }
 
       // No steal attempts on this property yet
       if (!row) {
+        console.log(`ℹ️  [STEAL COOLDOWN] No steal attempts found for property ${propIdNum}`);
         return callback(null, {
           isOnCooldown: false,
           cooldownRemaining: 0,
@@ -50,11 +58,15 @@ function getStealCooldownForProperty(wallet, propertyId, callback) {
         });
       }
 
+      console.log(`✅ [STEAL COOLDOWN] Found steal attempt:`, row);
+
       const now = Math.floor(Date.now() / 1000);
       const elapsed = now - row.block_time;
       const remaining = Math.max(0, stealCooldownDuration - elapsed);
 
-      callback(null, {
+      console.log(`⏰ [STEAL COOLDOWN] Current time: ${now}, Last steal: ${row.block_time}, Elapsed: ${elapsed}s, Remaining: ${remaining}s`);
+
+      const result = {
         isOnCooldown: remaining > 0,
         cooldownRemaining: remaining,
         lastStealTimestamp: row.block_time,
@@ -62,7 +74,11 @@ function getStealCooldownForProperty(wallet, propertyId, callback) {
         lastStealSuccess: row.action_type === 'steal_success',
         cooldownDuration: stealCooldownDuration,
         propertyId: propIdNum
-      });
+      };
+
+      console.log(`🎯 [STEAL COOLDOWN] Result:`, result);
+
+      callback(null, result);
     }
   );
 }
