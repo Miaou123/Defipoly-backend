@@ -9,6 +9,7 @@ const { initDatabase, closeDatabase } = require('./src/config/database');
 const routes = require('./src/routes');
 const errorHandler = require('./src/middleware/errorHandler');
 
+require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3005;
 

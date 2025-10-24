@@ -9,9 +9,11 @@ const statsRouter = require('./stats');
 const leaderboardRouter = require('./leaderboard');
 const gameRouter = require('./game');
 const propertiesRouter = require('./properties');
+const webhooksRouter = require('./webhooks');
 const stealCooldownRouter = require('./stealCooldown');
 
 // Mount routes
+router.use('/webhooks', webhooksRouter);
 router.use('/profile', profilesRouter);
 router.use('/profiles', profilesRouter); // For batch endpoint
 router.use('/actions', actionsRouter);
