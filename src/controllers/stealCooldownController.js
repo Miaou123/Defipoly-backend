@@ -28,5 +28,6 @@ const getAllPlayerStealCooldowns = (req, res) => {
 
 module.exports = {
   getStealCooldownStatus,
-  getAllPlayerStealCooldowns
+  getAllPlayerStealCooldowns,
+
 };
