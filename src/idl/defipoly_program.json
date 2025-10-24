@@ -1,0 +1,2026 @@
+{
+    "address": "HpacCgxUuzwoMeryvQtC94RxFmpxC6dYPX5E17JBzBmQ",
+    "metadata": {
+      "name": "defipoly_program",
+      "version": "0.1.0",
+      "spec": "0.1.0",
+      "description": "Created with Anchor"
+    },
+    "instructions": [
+      {
+        "name": "activate_shield",
+        "discriminator": [
+          84,
+          221,
+          108,
+          82,
+          168,
+          124,
+          77,
+          235
+        ],
+        "accounts": [
+          {
+            "name": "property"
+          },
+          {
+            "name": "ownership",
+            "writable": true
+          },
+          {
+            "name": "player_account"
+          },
+          {
+            "name": "player_token_account",
+            "writable": true
+          },
+          {
+            "name": "reward_pool_vault",
+            "writable": true
+          },
+          {
+            "name": "dev_token_account",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "player",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          }
+        ],
+        "args": [
+          {
+            "name": "slots_to_shield",
+            "type": "u16"
+          }
+        ]
+      },
+      {
+        "name": "admin_close_player_account",
+        "discriminator": [
+          119,
+          200,
+          216,
+          104,
+          183,
+          222,
+          59,
+          100
+        ],
+        "accounts": [
+          {
+            "name": "player_account",
+            "docs": [
+              "We verify it's owned by our program in the instruction handler"
+            ],
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "authority",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "rent_receiver",
+            "writable": true
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "buy_property",
+        "discriminator": [
+          128,
+          136,
+          62,
+          184,
+          252,
+          187,
+          128,
+          130
+        ],
+        "accounts": [
+          {
+            "name": "property",
+            "writable": true
+          },
+          {
+            "name": "ownership",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    111,
+                    119,
+                    110,
+                    101,
+                    114,
+                    115,
+                    104,
+                    105,
+                    112
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "player"
+                },
+                {
+                  "kind": "account",
+                  "path": "property.property_id",
+                  "account": "Property"
+                }
+              ]
+            }
+          },
+          {
+            "name": "set_cooldown",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    99,
+                    111,
+                    111,
+                    108,
+                    100,
+                    111,
+                    119,
+                    110
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "player"
+                },
+                {
+                  "kind": "account",
+                  "path": "property.set_id",
+                  "account": "Property"
+                }
+              ]
+            }
+          },
+          {
+            "name": "set_ownership",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    115,
+                    101,
+                    116,
+                    95,
+                    111,
+                    119,
+                    110,
+                    101,
+                    114,
+                    115,
+                    104,
+                    105,
+                    112
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "player"
+                },
+                {
+                  "kind": "account",
+                  "path": "property.set_id",
+                  "account": "Property"
+                }
+              ]
+            }
+          },
+          {
+            "name": "set_stats",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    115,
+                    101,
+                    116,
+                    95,
+                    115,
+                    116,
+                    97,
+                    116,
+                    115,
+                    95,
+                    118,
+                    50
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "property.set_id",
+                  "account": "Property"
+                }
+              ]
+            }
+          },
+          {
+            "name": "player_account",
+            "writable": true
+          },
+          {
+            "name": "player_token_account",
+            "writable": true
+          },
+          {
+            "name": "reward_pool_vault",
+            "writable": true
+          },
+          {
+            "name": "dev_token_account",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "player",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "slots",
+            "type": "u16"
+          }
+        ]
+      },
+      {
+        "name": "claim_rewards",
+        "discriminator": [
+          4,
+          144,
+          132,
+          71,
+          116,
+          23,
+          151,
+          80
+        ],
+        "accounts": [
+          {
+            "name": "player_account",
+            "writable": true
+          },
+          {
+            "name": "player_token_account",
+            "writable": true
+          },
+          {
+            "name": "reward_pool_vault",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "player",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          }
+        ],
+        "args": [
+          {
+            "name": "num_properties",
+            "type": "u8"
+          }
+        ]
+      },
+      {
+        "name": "close_player_account",
+        "discriminator": [
+          244,
+          181,
+          162,
+          146,
+          184,
+          133,
+          216,
+          95
+        ],
+        "accounts": [
+          {
+            "name": "player_account",
+            "writable": true
+          },
+          {
+            "name": "player",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "rent_receiver",
+            "writable": true
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "initialize_game",
+        "discriminator": [
+          44,
+          62,
+          102,
+          247,
+          126,
+          208,
+          130,
+          215
+        ],
+        "accounts": [
+          {
+            "name": "game_config",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    103,
+                    97,
+                    109,
+                    101,
+                    95,
+                    99,
+                    111,
+                    110,
+                    102,
+                    105,
+                    103
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "token_mint"
+          },
+          {
+            "name": "reward_pool_vault",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    114,
+                    101,
+                    119,
+                    97,
+                    114,
+                    100,
+                    95,
+                    112,
+                    111,
+                    111,
+                    108,
+                    95,
+                    118,
+                    97,
+                    117,
+                    108,
+                    116
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "game_config"
+                }
+              ]
+            }
+          },
+          {
+            "name": "dev_token_account",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "account",
+                  "path": "dev_wallet"
+                },
+                {
+                  "kind": "const",
+                  "value": [
+                    6,
+                    221,
+                    246,
+                    225,
+                    215,
+                    101,
+                    161,
+                    147,
+                    217,
+                    203,
+                    225,
+                    70,
+                    206,
+                    235,
+                    121,
+                    172,
+                    28,
+                    180,
+                    133,
+                    237,
+                    95,
+                    91,
+                    55,
+                    145,
+                    58,
+                    140,
+                    245,
+                    133,
+                    126,
+                    255,
+                    0,
+                    169
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "token_mint"
+                }
+              ],
+              "program": {
+                "kind": "const",
+                "value": [
+                  140,
+                  151,
+                  37,
+                  143,
+                  78,
+                  36,
+                  137,
+                  241,
+                  187,
+                  61,
+                  16,
+                  41,
+                  20,
+                  142,
+                  13,
+                  131,
+                  11,
+                  90,
+                  19,
+                  153,
+                  218,
+                  255,
+                  16,
+                  132,
+                  4,
+                  142,
+                  123,
+                  216,
+                  219,
+                  233,
+                  248,
+                  89
+                ]
+              }
+            }
+          },
+          {
+            "name": "dev_wallet"
+          },
+          {
+            "name": "authority",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "associated_token_program",
+            "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          },
+          {
+            "name": "rent",
+            "address": "SysvarRent111111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "initial_reward_pool_amount",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "initialize_player",
+        "discriminator": [
+          79,
+          249,
+          88,
+          177,
+          220,
+          62,
+          56,
+          128
+        ],
+        "accounts": [
+          {
+            "name": "player_account",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    112,
+                    108,
+                    97,
+                    121,
+                    101,
+                    114
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "player"
+                }
+              ]
+            }
+          },
+          {
+            "name": "player",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "initialize_property",
+        "discriminator": [
+          94,
+          188,
+          21,
+          36,
+          186,
+          50,
+          195,
+          141
+        ],
+        "accounts": [
+          {
+            "name": "property",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    112,
+                    114,
+                    111,
+                    112,
+                    101,
+                    114,
+                    116,
+                    121
+                  ]
+                },
+                {
+                  "kind": "arg",
+                  "path": "property_id"
+                }
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "property_id",
+            "type": "u8"
+          },
+          {
+            "name": "set_id",
+            "type": "u8"
+          },
+          {
+            "name": "max_slots_per_property",
+            "type": "u16"
+          },
+          {
+            "name": "max_per_player",
+            "type": "u16"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "yield_percent_bps",
+            "type": "u16"
+          },
+          {
+            "name": "shield_cost_percent_bps",
+            "type": "u16"
+          },
+          {
+            "name": "cooldown_seconds",
+            "type": "i64"
+          }
+        ]
+      },
+      {
+        "name": "pause_game",
+        "discriminator": [
+          133,
+          116,
+          165,
+          66,
+          173,
+          81,
+          10,
+          85
+        ],
+        "accounts": [
+          {
+            "name": "game_config",
+            "writable": true
+          },
+          {
+            "name": "authority",
+            "signer": true
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "sell_property",
+        "discriminator": [
+          215,
+          84,
+          1,
+          16,
+          41,
+          51,
+          55,
+          203
+        ],
+        "accounts": [
+          {
+            "name": "property",
+            "writable": true
+          },
+          {
+            "name": "ownership",
+            "writable": true
+          },
+          {
+            "name": "player_account",
+            "writable": true
+          },
+          {
+            "name": "player_token_account",
+            "writable": true
+          },
+          {
+            "name": "reward_pool_vault",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "player",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          }
+        ],
+        "args": [
+          {
+            "name": "slots",
+            "type": "u16"
+          }
+        ]
+      },
+      {
+        "name": "steal_property_instant",
+        "docs": [
+          "Instant steal with cooldown protection (SINGLE TRANSACTION - 33% success rate)"
+        ],
+        "discriminator": [
+          213,
+          104,
+          60,
+          144,
+          178,
+          218,
+          146,
+          63
+        ],
+        "accounts": [
+          {
+            "name": "property"
+          },
+          {
+            "name": "target_ownership",
+            "writable": true
+          },
+          {
+            "name": "attacker_ownership",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    111,
+                    119,
+                    110,
+                    101,
+                    114,
+                    115,
+                    104,
+                    105,
+                    112
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "attacker"
+                },
+                {
+                  "kind": "account",
+                  "path": "property.property_id",
+                  "account": "Property"
+                }
+              ]
+            }
+          },
+          {
+            "name": "steal_cooldown",
+            "writable": true,
+            "pda": {
+              "seeds": [
+                {
+                  "kind": "const",
+                  "value": [
+                    115,
+                    116,
+                    101,
+                    97,
+                    108,
+                    95,
+                    99,
+                    111,
+                    111,
+                    108,
+                    100,
+                    111,
+                    119,
+                    110
+                  ]
+                },
+                {
+                  "kind": "account",
+                  "path": "attacker"
+                },
+                {
+                  "kind": "account",
+                  "path": "property.property_id",
+                  "account": "Property"
+                }
+              ]
+            }
+          },
+          {
+            "name": "player_account",
+            "writable": true
+          },
+          {
+            "name": "target_account",
+            "writable": true
+          },
+          {
+            "name": "player_token_account",
+            "writable": true
+          },
+          {
+            "name": "reward_pool_vault",
+            "writable": true
+          },
+          {
+            "name": "dev_token_account",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "slot_hashes",
+            "address": "SysvarS1otHashes111111111111111111111111111"
+          },
+          {
+            "name": "attacker",
+            "writable": true,
+            "signer": true
+          },
+          {
+            "name": "token_program",
+            "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          {
+            "name": "system_program",
+            "address": "11111111111111111111111111111111"
+          }
+        ],
+        "args": [
+          {
+            "name": "target_player",
+            "type": "pubkey"
+          },
+          {
+            "name": "user_randomness",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "unpause_game",
+        "discriminator": [
+          52,
+          251,
+          30,
+          83,
+          140,
+          62,
+          220,
+          243
+        ],
+        "accounts": [
+          {
+            "name": "game_config",
+            "writable": true
+          },
+          {
+            "name": "authority",
+            "signer": true
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "update_phase",
+        "discriminator": [
+          192,
+          90,
+          97,
+          235,
+          207,
+          129,
+          59,
+          5
+        ],
+        "accounts": [
+          {
+            "name": "game_config",
+            "writable": true
+          },
+          {
+            "name": "authority",
+            "signer": true
+          }
+        ],
+        "args": [
+          {
+            "name": "new_phase",
+            "type": "u8"
+          }
+        ]
+      },
+      {
+        "name": "update_property_max_slots",
+        "discriminator": [
+          248,
+          46,
+          67,
+          110,
+          19,
+          233,
+          57,
+          235
+        ],
+        "accounts": [
+          {
+            "name": "property",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "authority",
+            "signer": true
+          }
+        ],
+        "args": [
+          {
+            "name": "property_id",
+            "type": "u8"
+          },
+          {
+            "name": "new_max_slots",
+            "type": "u16"
+          }
+        ]
+      },
+      {
+        "name": "update_property_price",
+        "discriminator": [
+          26,
+          120,
+          255,
+          136,
+          9,
+          83,
+          139,
+          105
+        ],
+        "accounts": [
+          {
+            "name": "property",
+            "writable": true
+          },
+          {
+            "name": "game_config"
+          },
+          {
+            "name": "authority",
+            "signer": true
+          }
+        ],
+        "args": [
+          {
+            "name": "property_id",
+            "type": "u8"
+          },
+          {
+            "name": "new_price",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "update_steal_chances",
+        "discriminator": [
+          76,
+          217,
+          146,
+          47,
+          85,
+          209,
+          173,
+          3
+        ],
+        "accounts": [
+          {
+            "name": "game_config",
+            "writable": true
+          },
+          {
+            "name": "authority",
+            "signer": true
+          }
+        ],
+        "args": [
+          {
+            "name": "targeted_bps",
+            "type": "u16"
+          },
+          {
+            "name": "random_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    ],
+    "accounts": [
+      {
+        "name": "GameConfig",
+        "discriminator": [
+          45,
+          146,
+          146,
+          33,
+          170,
+          69,
+          96,
+          133
+        ]
+      },
+      {
+        "name": "PlayerAccount",
+        "discriminator": [
+          224,
+          184,
+          224,
+          50,
+          98,
+          72,
+          48,
+          236
+        ]
+      },
+      {
+        "name": "PlayerSetCooldown",
+        "discriminator": [
+          135,
+          20,
+          47,
+          188,
+          17,
+          159,
+          96,
+          123
+        ]
+      },
+      {
+        "name": "PlayerSetOwnership",
+        "discriminator": [
+          246,
+          100,
+          31,
+          189,
+          6,
+          148,
+          229,
+          99
+        ]
+      },
+      {
+        "name": "PlayerStealCooldown",
+        "discriminator": [
+          133,
+          168,
+          157,
+          46,
+          40,
+          81,
+          149,
+          245
+        ]
+      },
+      {
+        "name": "Property",
+        "discriminator": [
+          195,
+          247,
+          69,
+          181,
+          195,
+          47,
+          152,
+          19
+        ]
+      },
+      {
+        "name": "PropertyOwnership",
+        "discriminator": [
+          245,
+          240,
+          179,
+          197,
+          116,
+          60,
+          248,
+          94
+        ]
+      },
+      {
+        "name": "SetStats",
+        "discriminator": [
+          94,
+          47,
+          130,
+          178,
+          226,
+          11,
+          2,
+          222
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "AdminUpdateEvent",
+        "discriminator": [
+          254,
+          174,
+          166,
+          166,
+          35,
+          154,
+          22,
+          143
+        ]
+      },
+      {
+        "name": "PropertyBoughtEvent",
+        "discriminator": [
+          233,
+          97,
+          56,
+          154,
+          112,
+          136,
+          181,
+          220
+        ]
+      },
+      {
+        "name": "PropertySoldEvent",
+        "discriminator": [
+          2,
+          169,
+          156,
+          198,
+          198,
+          248,
+          149,
+          115
+        ]
+      },
+      {
+        "name": "RewardsClaimedEvent",
+        "discriminator": [
+          22,
+          1,
+          42,
+          183,
+          250,
+          8,
+          157,
+          146
+        ]
+      },
+      {
+        "name": "ShieldActivatedEvent",
+        "discriminator": [
+          210,
+          41,
+          91,
+          63,
+          175,
+          240,
+          161,
+          163
+        ]
+      },
+      {
+        "name": "StealAttemptEvent",
+        "discriminator": [
+          17,
+          164,
+          32,
+          158,
+          5,
+          217,
+          200,
+          87
+        ]
+      },
+      {
+        "name": "StealFailedEvent",
+        "discriminator": [
+          102,
+          112,
+          94,
+          162,
+          248,
+          242,
+          245,
+          123
+        ]
+      },
+      {
+        "name": "StealSuccessEvent",
+        "discriminator": [
+          173,
+          237,
+          85,
+          193,
+          182,
+          54,
+          214,
+          51
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "code": 6000,
+        "name": "InvalidPropertyId",
+        "msg": "Invalid property ID (must be 0-21)"
+      },
+      {
+        "code": 6001,
+        "name": "InvalidSlotAmount",
+        "msg": "Invalid slot amount (must be > 0)"
+      },
+      {
+        "code": 6002,
+        "name": "Overflow",
+        "msg": "Arithmetic overflow"
+      },
+      {
+        "code": 6003,
+        "name": "MaxSlotsReached",
+        "msg": "Maximum slots per player reached"
+      },
+      {
+        "code": 6004,
+        "name": "InvalidSetId",
+        "msg": "Invalid set ID (must be 0-7)"
+      },
+      {
+        "code": 6005,
+        "name": "NoSlotsAvailable",
+        "msg": "No available slots for this property"
+      },
+      {
+        "code": 6006,
+        "name": "CooldownActive",
+        "msg": "Cooldown still active - cannot purchase yet"
+      },
+      {
+        "code": 6007,
+        "name": "DoesNotOwnProperty",
+        "msg": "Player does not own this property"
+      },
+      {
+        "code": 6008,
+        "name": "InvalidShieldSlots",
+        "msg": "Invalid number of slots to shield"
+      },
+      {
+        "code": 6009,
+        "name": "TargetDoesNotOwnProperty",
+        "msg": "Target does not own this property"
+      },
+      {
+        "code": 6010,
+        "name": "CannotStealFromSelf",
+        "msg": "Cannot steal from yourself"
+      },
+      {
+        "code": 6011,
+        "name": "AllSlotsShielded",
+        "msg": "All slots are shielded"
+      },
+      {
+        "code": 6012,
+        "name": "InsufficientSlots",
+        "msg": "Insufficient slots"
+      },
+      {
+        "code": 6013,
+        "name": "NoRewardsToClaim",
+        "msg": "No rewards to claim"
+      },
+      {
+        "code": 6014,
+        "name": "GamePaused",
+        "msg": "Game is paused"
+      },
+      {
+        "code": 6015,
+        "name": "Unauthorized",
+        "msg": "Unauthorized - ownership does not match player"
+      },
+      {
+        "code": 6016,
+        "name": "InvalidAccountCount",
+        "msg": "Invalid account count in remaining_accounts"
+      },
+      {
+        "code": 6017,
+        "name": "PropertyMismatch",
+        "msg": "Property mismatch between ownership and property account"
+      },
+      {
+        "code": 6018,
+        "name": "NoProperties",
+        "msg": "No properties provided"
+      },
+      {
+        "code": 6019,
+        "name": "InvalidTarget",
+        "msg": "Invalid target player"
+      },
+      {
+        "code": 6020,
+        "name": "InsufficientRewardPool",
+        "msg": "Insufficient reward pool balance"
+      },
+      {
+        "code": 6021,
+        "name": "TooManyProperties",
+        "msg": "Too many properties in single claim (max 22)"
+      },
+      {
+        "code": 6022,
+        "name": "ClaimTooSoon",
+        "msg": "Claim too soon - wait at least 1 minutes"
+      },
+      {
+        "code": 6023,
+        "name": "AlreadyFulfilled",
+        "msg": "VRF result already fulfilled"
+      },
+      {
+        "code": 6024,
+        "name": "VrfNotReady",
+        "msg": "VRF result not ready yet - wait at least 1 slot"
+      },
+      {
+        "code": 6025,
+        "name": "PendingStealExists",
+        "msg": "Pending steal request exists - wait 5 minutes or until fulfilled"
+      },
+      {
+        "code": 6026,
+        "name": "NotFulfilled",
+        "msg": "Steal request not fulfilled yet - cannot close"
+      },
+      {
+        "code": 6027,
+        "name": "StealRequestExpired",
+        "msg": "Steal request expired - must fulfill within 150 slots (~60 sec)"
+      },
+      {
+        "code": 6028,
+        "name": "StealCooldownActive",
+        "msg": "Steal cooldown active - wait before attempting again"
+      },
+      {
+        "code": 6029,
+        "name": "SlotHashUnavailable",
+        "msg": "Slot hash unavailable - try again"
+      }
+    ],
+    "types": [
+      {
+        "name": "AdminUpdateEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "update_type",
+              "type": "string"
+            },
+            {
+              "name": "new_value",
+              "type": "u64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "GameConfig",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "authority",
+              "type": "pubkey"
+            },
+            {
+              "name": "dev_wallet",
+              "type": "pubkey"
+            },
+            {
+              "name": "token_mint",
+              "type": "pubkey"
+            },
+            {
+              "name": "reward_pool_vault",
+              "type": "pubkey"
+            },
+            {
+              "name": "total_supply",
+              "type": "u64"
+            },
+            {
+              "name": "circulating_supply",
+              "type": "u64"
+            },
+            {
+              "name": "reward_pool_initial",
+              "type": "u64"
+            },
+            {
+              "name": "current_phase",
+              "type": "u8"
+            },
+            {
+              "name": "game_paused",
+              "type": "bool"
+            },
+            {
+              "name": "steal_chance_targeted_bps",
+              "type": "u16"
+            },
+            {
+              "name": "steal_chance_random_bps",
+              "type": "u16"
+            },
+            {
+              "name": "steal_cost_percent_bps",
+              "type": "u16"
+            },
+            {
+              "name": "set_bonus_bps",
+              "type": "u16"
+            },
+            {
+              "name": "max_properties_per_claim",
+              "type": "u8"
+            },
+            {
+              "name": "min_claim_interval_minutes",
+              "type": "i64"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            },
+            {
+              "name": "reward_pool_vault_bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PlayerAccount",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "owner",
+              "type": "pubkey"
+            },
+            {
+              "name": "total_slots_owned",
+              "type": "u16"
+            },
+            {
+              "name": "total_base_daily_income",
+              "type": "u64"
+            },
+            {
+              "name": "last_claim_timestamp",
+              "type": "i64"
+            },
+            {
+              "name": "total_rewards_claimed",
+              "type": "u64"
+            },
+            {
+              "name": "complete_sets_owned",
+              "type": "u8"
+            },
+            {
+              "name": "properties_owned_count",
+              "type": "u8"
+            },
+            {
+              "name": "total_steals_attempted",
+              "type": "u32"
+            },
+            {
+              "name": "total_steals_successful",
+              "type": "u32"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PlayerSetCooldown",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "set_id",
+              "type": "u8"
+            },
+            {
+              "name": "last_purchase_timestamp",
+              "type": "i64"
+            },
+            {
+              "name": "cooldown_duration",
+              "type": "i64"
+            },
+            {
+              "name": "last_purchased_property_id",
+              "type": "u8"
+            },
+            {
+              "name": "properties_owned_in_set",
+              "type": {
+                "array": [
+                  "u8",
+                  3
+                ]
+              }
+            },
+            {
+              "name": "properties_count",
+              "type": "u8"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PlayerSetOwnership",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "set_id",
+              "type": "u8"
+            },
+            {
+              "name": "total_slots_in_set",
+              "type": "u16"
+            },
+            {
+              "name": "properties_owned_ids",
+              "type": {
+                "array": [
+                  "u8",
+                  3
+                ]
+              }
+            },
+            {
+              "name": "properties_count",
+              "type": "u8"
+            },
+            {
+              "name": "has_complete_set",
+              "type": "bool"
+            },
+            {
+              "name": "first_property_timestamp",
+              "type": "i64"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PlayerStealCooldown",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "last_steal_attempt_timestamp",
+              "type": "i64"
+            },
+            {
+              "name": "cooldown_duration",
+              "type": "i64"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "Property",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "set_id",
+              "type": "u8"
+            },
+            {
+              "name": "max_slots_per_property",
+              "type": "u16"
+            },
+            {
+              "name": "available_slots",
+              "type": "u16"
+            },
+            {
+              "name": "max_per_player",
+              "type": "u16"
+            },
+            {
+              "name": "price",
+              "type": "u64"
+            },
+            {
+              "name": "yield_percent_bps",
+              "type": "u16"
+            },
+            {
+              "name": "shield_cost_percent_bps",
+              "type": "u16"
+            },
+            {
+              "name": "cooldown_seconds",
+              "type": "i64"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PropertyBoughtEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "price",
+              "type": "u64"
+            },
+            {
+              "name": "slots_owned",
+              "type": "u16"
+            },
+            {
+              "name": "slots",
+              "type": "u16"
+            },
+            {
+              "name": "total_cost",
+              "type": "u64"
+            },
+            {
+              "name": "total_slots_owned",
+              "type": "u16"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PropertyOwnership",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "slots_owned",
+              "type": "u16"
+            },
+            {
+              "name": "slots_shielded",
+              "type": "u16"
+            },
+            {
+              "name": "purchase_timestamp",
+              "type": "i64"
+            },
+            {
+              "name": "shield_expiry",
+              "type": "i64"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "PropertySoldEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "slots",
+              "type": "u16"
+            },
+            {
+              "name": "received",
+              "type": "u64"
+            },
+            {
+              "name": "sell_value_percent",
+              "type": "u16"
+            },
+            {
+              "name": "days_held",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "RewardsClaimedEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            },
+            {
+              "name": "seconds_elapsed",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "SetStats",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "set_id",
+              "type": "u8"
+            },
+            {
+              "name": "total_slots_sold",
+              "type": "u64"
+            },
+            {
+              "name": "total_revenue",
+              "type": "u64"
+            },
+            {
+              "name": "unique_owners",
+              "type": "u32"
+            },
+            {
+              "name": "total_players",
+              "type": "u32"
+            },
+            {
+              "name": "bump",
+              "type": "u8"
+            }
+          ]
+        }
+      },
+      {
+        "name": "ShieldActivatedEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "player",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "slots_shielded",
+              "type": "u16"
+            },
+            {
+              "name": "cost",
+              "type": "u64"
+            },
+            {
+              "name": "expiry",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StealAttemptEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "attacker",
+              "type": "pubkey"
+            },
+            {
+              "name": "target",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "steal_cost",
+              "type": "u64"
+            },
+            {
+              "name": "is_targeted",
+              "type": "bool"
+            },
+            {
+              "name": "request_slot",
+              "type": "u64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StealFailedEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "attacker",
+              "type": "pubkey"
+            },
+            {
+              "name": "target",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "steal_cost",
+              "type": "u64"
+            },
+            {
+              "name": "targeted",
+              "type": "bool"
+            },
+            {
+              "name": "vrf_result",
+              "type": "u64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "StealSuccessEvent",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "attacker",
+              "type": "pubkey"
+            },
+            {
+              "name": "target",
+              "type": "pubkey"
+            },
+            {
+              "name": "property_id",
+              "type": "u8"
+            },
+            {
+              "name": "steal_cost",
+              "type": "u64"
+            },
+            {
+              "name": "targeted",
+              "type": "bool"
+            },
+            {
+              "name": "vrf_result",
+              "type": "u64"
+            }
+          ]
+        }
+      }
+    ]
+  }
