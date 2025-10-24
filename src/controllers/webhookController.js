@@ -1,6 +1,12 @@
+// ============================================
+// FILE: webhookController.js
+// Transaction processor for both webhooks and WSS
+// FIXED: Now uses gameService.js for proper stats tracking
+// ============================================
+
 const { parseTransaction } = require('../services/transactionProcessor');
 const { getDatabase } = require('../config/database');
-const { updatePlayerStats } = require('../services/playerStatsService');
+const { updatePlayerStats, updateTargetOnSteal } = require('../services/gameService'); // ✅ FIXED!
 
 async function processWebhook(payload) {
   const transactions = Array.isArray(payload) ? payload : [payload];
@@ -14,6 +20,7 @@ async function processWebhook(payload) {
       
       await storeTransactionData(parsedData);
       
+      // Update player stats using gameService (the correct one!)
       await updatePlayerStats(
         parsedData.playerAddress,
         parsedData.actionType,
@@ -21,6 +28,15 @@ async function processWebhook(payload) {
         parsedData.slots,
         parsedData.propertyId
       );
+
+      // If steal success, update target player too
+      if (parsedData.actionType === 'steal_success' && parsedData.targetAddress) {
+        await updateTargetOnSteal(
+          parsedData.targetAddress,
+          parsedData.propertyId,
+          parsedData.slots
+        );
+      }
     } catch (error) {
       console.error('❌ [WEBHOOK] Error:', error);
     }
@@ -51,7 +67,14 @@ async function storeTransactionData(data) {
       ],
       function(err) {
         if (err) reject(err);
-        else resolve(this.changes);
+        else {
+          if (this.changes > 0) {
+            console.log(`      ✅ [WSS] Stored in database (Row ID: ${this.lastID})`);
+          } else {
+            console.log(`      ℹ️  [WSS] Transaction already in database (duplicate)`);
+          }
+          resolve(this.changes);
+        }
       }
     );
   });
