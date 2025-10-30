@@ -25,7 +25,8 @@ const getPlayerStats = (req, res) => {
           shieldsActivated: 0,
           totalSpent: 0,
           totalEarned: 0,
-          totalSlotsOwned: 0
+          totalSlotsOwned: 0,
+          dailyIncome: 0
         });
       }
       
@@ -41,6 +42,7 @@ const getPlayerStats = (req, res) => {
         totalSpent: row.total_spent,
         totalEarned: row.total_earned,
         totalSlotsOwned: row.total_slots_owned,
+        dailyIncome: row.daily_income || 0, // ✅ ADDED: Return daily income from database
         lastActionTime: row.last_action_time,
         updatedAt: row.updated_at
       });
