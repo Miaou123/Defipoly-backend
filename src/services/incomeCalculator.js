@@ -1,8 +1,13 @@
+// src/services/incomeCalculator.js
+// UPDATED: Uses variable set bonuses from generated constants
+// The constants.js file is auto-generated from property-config.ts
+
 const { getDatabase } = require('../config/database');
-const { PROPERTIES, SET_BONUS_BPS, PROPERTY_SETS } = require('../config/constants');
+const { PROPERTIES, getSetBonusBps, PROPERTY_SETS } = require('../config/constants');
 
 /**
- * Calculate a player's actual daily income with set bonuses
+ * Calculate a player's actual daily income with variable set bonuses
+ * Variable bonuses range from 30% (Brown) to 50% (Dark Blue)
  */
 function calculateDailyIncome(walletAddress, callback) {
   const db = getDatabase();
@@ -38,7 +43,7 @@ function calculateDailyIncome(walletAddress, callback) {
         setData[setId].minSlots = Math.min(setData[setId].minSlots, own.slots_owned);
       });
 
-      // Calculate total daily income
+      // Calculate total daily income with variable set bonuses
       let totalDailyIncome = 0;
 
       Object.keys(setData).forEach(setId => {
@@ -47,6 +52,9 @@ function calculateDailyIncome(walletAddress, callback) {
 
         const requiredProperties = getPropertiesInSet(parseInt(setId));
         const hasCompleteSet = set.properties.length >= requiredProperties;
+        
+        // Get the variable set bonus for this set (30-50% based on set tier)
+        const setBonusBps = getSetBonusBps(parseInt(setId));
 
         set.properties.forEach(prop => {
           const baseDailyIncome = prop.dailyIncomePerSlot * prop.slots;
@@ -59,8 +67,8 @@ function calculateDailyIncome(walletAddress, callback) {
             // Base slots get normal income
             const baseIncome = baseSlots * prop.dailyIncomePerSlot;
 
-            // Bonus slots get 40% extra
-            const bonusIncome = bonusSlots * prop.dailyIncomePerSlot * (10000 + SET_BONUS_BPS) / 10000;
+            // Bonus slots get variable bonus (30-50% based on set)
+            const bonusIncome = bonusSlots * prop.dailyIncomePerSlot * (10000 + setBonusBps) / 10000;
 
             totalDailyIncome += baseIncome + bonusIncome;
           } else {

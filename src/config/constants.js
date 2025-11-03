@@ -5,36 +5,43 @@
 // ============================================
 
 const PROPERTIES = [
-  // Set 0 - Brown
-  { id: 0, setId: 0, price: 1500000000000, yieldBps: 600, cooldownHours: 6 }, // Mediterranean Avenue
-  { id: 1, setId: 0, price: 1500000000000, yieldBps: 600, cooldownHours: 6 }, // Baltic Avenue
-  // Set 1 - Light Blue
-  { id: 2, setId: 1, price: 3500000000000, yieldBps: 650, cooldownHours: 8 }, // Oriental Avenue
-  { id: 3, setId: 1, price: 3500000000000, yieldBps: 650, cooldownHours: 8 }, // Vermont Avenue
-  { id: 4, setId: 1, price: 3500000000000, yieldBps: 650, cooldownHours: 8 }, // Connecticut Avenue
-  // Set 2 - Pink
-  { id: 5, setId: 2, price: 7500000000000, yieldBps: 700, cooldownHours: 10 }, // St. Charles Place
-  { id: 6, setId: 2, price: 7500000000000, yieldBps: 700, cooldownHours: 10 }, // States Avenue
-  { id: 7, setId: 2, price: 7500000000000, yieldBps: 700, cooldownHours: 10 }, // Virginia Avenue
-  // Set 3 - Orange
-  { id: 8, setId: 3, price: 15000000000000, yieldBps: 750, cooldownHours: 12 }, // St. James Place
-  { id: 9, setId: 3, price: 15000000000000, yieldBps: 750, cooldownHours: 12 }, // Tennessee Avenue
-  { id: 10, setId: 3, price: 15000000000000, yieldBps: 750, cooldownHours: 12 }, // New York Avenue
-  // Set 4 - Red
-  { id: 11, setId: 4, price: 30000000000000, yieldBps: 800, cooldownHours: 16 }, // Kentucky Avenue
-  { id: 12, setId: 4, price: 30000000000000, yieldBps: 800, cooldownHours: 16 }, // Indiana Avenue
-  { id: 13, setId: 4, price: 30000000000000, yieldBps: 800, cooldownHours: 16 }, // Illinois Avenue
-  // Set 5 - Yellow
-  { id: 14, setId: 5, price: 60000000000000, yieldBps: 850, cooldownHours: 20 }, // Atlantic Avenue
-  { id: 15, setId: 5, price: 60000000000000, yieldBps: 850, cooldownHours: 20 }, // Ventnor Avenue
-  { id: 16, setId: 5, price: 60000000000000, yieldBps: 850, cooldownHours: 20 }, // Marvin Gardens
-  // Set 6 - Green
-  { id: 17, setId: 6, price: 120000000000000, yieldBps: 900, cooldownHours: 24 }, // Pacific Avenue
-  { id: 18, setId: 6, price: 120000000000000, yieldBps: 900, cooldownHours: 24 }, // North Carolina Avenue
-  { id: 19, setId: 6, price: 120000000000000, yieldBps: 900, cooldownHours: 24 }, // Pennsylvania Avenue
-  // Set 7 - Dark Blue
-  { id: 20, setId: 7, price: 250000000000000, yieldBps: 1000, cooldownHours: 24 }, // Park Place
-  { id: 21, setId: 7, price: 250000000000000, yieldBps: 1000, cooldownHours: 24 }, // Boardwalk
+  // Set 0 - Brown (10%)
+  { id: 0, setId: 0, price: 1500000000000, yieldBps: 600, shieldCostBps: 1000, cooldownHours: 6 },
+  { id: 1, setId: 0, price: 1500000000000, yieldBps: 600, shieldCostBps: 1000, cooldownHours: 6 },
+  
+  // Set 1 - Light Blue (11%)
+  { id: 2, setId: 1, price: 3500000000000, yieldBps: 650, shieldCostBps: 1100, cooldownHours: 8 },
+  { id: 3, setId: 1, price: 3500000000000, yieldBps: 650, shieldCostBps: 1100, cooldownHours: 8 },
+  { id: 4, setId: 1, price: 3500000000000, yieldBps: 650, shieldCostBps: 1100, cooldownHours: 8 },
+  
+  // Set 2 - Pink (12%)
+  { id: 5, setId: 2, price: 7500000000000, yieldBps: 700, shieldCostBps: 1200, cooldownHours: 10 },
+  { id: 6, setId: 2, price: 7500000000000, yieldBps: 700, shieldCostBps: 1200, cooldownHours: 10 },
+  { id: 7, setId: 2, price: 7500000000000, yieldBps: 700, shieldCostBps: 1200, cooldownHours: 10 },
+  
+  // Set 3 - Orange (13%)
+  { id: 8, setId: 3, price: 15000000000000, yieldBps: 750, shieldCostBps: 1300, cooldownHours: 12 },
+  { id: 9, setId: 3, price: 15000000000000, yieldBps: 750, shieldCostBps: 1300, cooldownHours: 12 },
+  { id: 10, setId: 3, price: 15000000000000, yieldBps: 750, shieldCostBps: 1300, cooldownHours: 12 },
+  
+  // Set 4 - Red (14%)
+  { id: 11, setId: 4, price: 30000000000000, yieldBps: 800, shieldCostBps: 1400, cooldownHours: 16 },
+  { id: 12, setId: 4, price: 30000000000000, yieldBps: 800, shieldCostBps: 1400, cooldownHours: 16 },
+  { id: 13, setId: 4, price: 30000000000000, yieldBps: 800, shieldCostBps: 1400, cooldownHours: 16 },
+  
+  // Set 5 - Yellow (15%)
+  { id: 14, setId: 5, price: 60000000000000, yieldBps: 850, shieldCostBps: 1500, cooldownHours: 20 },
+  { id: 15, setId: 5, price: 60000000000000, yieldBps: 850, shieldCostBps: 1500, cooldownHours: 20 },
+  { id: 16, setId: 5, price: 60000000000000, yieldBps: 850, shieldCostBps: 1500, cooldownHours: 20 },
+  
+  // Set 6 - Green (16%)
+  { id: 17, setId: 6, price: 120000000000000, yieldBps: 900, shieldCostBps: 1600, cooldownHours: 24 },
+  { id: 18, setId: 6, price: 120000000000000, yieldBps: 900, shieldCostBps: 1600, cooldownHours: 24 },
+  { id: 19, setId: 6, price: 120000000000000, yieldBps: 900, shieldCostBps: 1600, cooldownHours: 24 },
+  
+  // Set 7 - Dark Blue (17%)
+  { id: 20, setId: 7, price: 240000000000000, yieldBps: 1000, shieldCostBps: 1700, cooldownHours: 28 },
+  { id: 21, setId: 7, price: 240000000000000, yieldBps: 1000, shieldCostBps: 1700, cooldownHours: 28 },
 ];
 
 const SET_BONUS_BPS = 4000; // 40% bonus
