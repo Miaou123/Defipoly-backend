@@ -17,7 +17,6 @@ router.use('/profiles', profilesRouter);
 router.use('/actions', actionsRouter);
 router.use('/cooldown', cooldownRouter);
 router.use('/stats', statsRouter);
-router.use('/leaderboard', leaderboardRouter);
 router.use('/game', gameRouter);
 router.use('/properties', propertiesRouter);
 router.use('/steal-cooldown', stealCooldownRouter);

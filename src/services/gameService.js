@@ -1,46 +1,66 @@
 // ============================================
 // FILE: src/services/gameService.js
-// Enhanced Game Service with Leaderboard Scoring
-// Replaces/enhances playerStatsService.js
+// Enhanced Game Service with FIXED Leaderboard Scoring
+// ✅ FIXED: Scores now scale properly (top score < 1M)
 // ============================================
 
 const { getDatabase } = require('../config/database');
 
 /**
  * Calculate composite leaderboard score
- * Multi-dimensional scoring that rewards both wealth and skill
+ * ✅ FIXED: Properly scaled to keep top scores under 1 million
+ * 
+ * Scoring breakdown for a top player (~400K SOL earned, 60 properties, 10 steals):
+ * - Wealth: ~120K points (30%)
+ * - Activity: ~30K points (25%)  
+ * - Combat: ~15K points (20%)
+ * - Efficiency: ~50K points (15%)
+ * - Defense: ~10K points (10%)
+ * Total: ~225K points (well under 1M target)
  */
 function calculateLeaderboardScore(stats) {
   let score = 0;
   
+  // Convert lamports to SOL for all calculations
+  const earnedSOL = stats.total_earned / 1e9;
+  const spentSOL = stats.total_spent / 1e9;
+  
   // 1. Wealth Component (30% weight)
-  // Rewards total earnings
-  score += (stats.total_earned / 1000) * 30;
+  // Scale: 1 SOL earned = 0.3 points
+  // Top player (442K SOL) = ~133K points
+  score += earnedSOL * 0.3;
   
-  // 2. Efficiency Component (25% weight)
-  // Rewards players with good ROI
-  const roi = stats.total_spent > 0 
-    ? stats.total_earned / stats.total_spent 
-    : 0;
-  score += Math.min(roi * 1000, 5000) * 0.25; // Cap at 500% ROI
+  // 2. Activity Component (25% weight)
+  // Properties: 100 points each
+  // Complete sets: 5000 points each (major achievement)
+  score += stats.properties_bought * 100;
+  score += stats.complete_sets * 5000;
   
-  // 3. Activity Component (20% weight)
-  score += stats.properties_bought * 10;
-  score += stats.complete_sets * 500; // Big bonus for complete sets
+  // 3. Combat Component (20% weight)
+  // Successful steals: 500 points each
+  score += stats.successful_steals * 500;
   
-  // 4. Combat Component (15% weight)
-  score += stats.successful_steals * 100;
+  // Win rate bonus (max 5000 points)
   const stealWinRate = stats.successful_steals + stats.failed_steals > 0
     ? stats.successful_steals / (stats.successful_steals + stats.failed_steals)
     : 0;
-  score += stealWinRate * 1000;
+  score += stealWinRate * 5000;
+  
+  // 4. Efficiency Component (15% weight)
+  // ROI multiplier (max 50,000 points for amazing ROI)
+  const roi = spentSOL > 0 ? earnedSOL / spentSOL : 0;
+  const roiBonus = Math.min(roi * 25000, 50000); // Cap at 200% ROI
+  score += roiBonus;
   
   // 5. Defense Component (10% weight)
-  score += stats.shields_activated * 25;
+  // Shields: 100 points each
+  score += stats.shields_activated * 100;
+  
+  // Defense rating bonus (max 10,000 points)
   const defenseRating = stats.total_slots_owned > 0
     ? 1 - (stats.times_stolen / Math.max(stats.total_slots_owned, 1))
     : 0;
-  score += defenseRating * 500;
+  score += defenseRating * 10000;
   
   return Math.floor(score);
 }
@@ -104,9 +124,10 @@ async function updatePlayerStats(walletAddress, actionType, amount = 0, slots = 
                            SET total_actions = total_actions + 1,
                                properties_bought = properties_bought + 1,
                                total_spent = total_spent + ?,
-                               total_slots_owned = total_slots_owned + ?
+                               total_slots_owned = total_slots_owned + ?,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [amount || 0, slots || 0, walletAddress];
+            params = [amount || 0, slots || 0, Math.floor(Date.now() / 1000), walletAddress];
             break;
 
           case 'sell':
@@ -114,54 +135,59 @@ async function updatePlayerStats(walletAddress, actionType, amount = 0, slots = 
                            SET total_actions = total_actions + 1,
                                properties_sold = properties_sold + 1,
                                total_earned = total_earned + ?,
-                               total_slots_owned = total_slots_owned - ?
+                               total_slots_owned = total_slots_owned - ?,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [amount || 0, slots || 0, walletAddress];
+            params = [amount || 0, slots || 0, Math.floor(Date.now() / 1000), walletAddress];
             break;
 
           case 'steal_success':
             updateQuery = `UPDATE player_stats 
                            SET total_actions = total_actions + 1,
                                successful_steals = successful_steals + 1,
-                               total_spent = total_spent + ?,
-                               total_slots_owned = total_slots_owned + ?
+                               total_slots_owned = total_slots_owned + ?,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [amount || 0, slots || 1, walletAddress];
+            params = [slots || 1, Math.floor(Date.now() / 1000), walletAddress];
             break;
 
           case 'steal_failed':
             updateQuery = `UPDATE player_stats 
                            SET total_actions = total_actions + 1,
                                failed_steals = failed_steals + 1,
-                               total_spent = total_spent + ?
+                               total_spent = total_spent + ?,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [amount || 0, walletAddress];
+            params = [amount || 0, Math.floor(Date.now() / 1000), walletAddress];
             break;
 
           case 'claim':
             updateQuery = `UPDATE player_stats 
                            SET total_actions = total_actions + 1,
                                rewards_claimed = rewards_claimed + 1,
-                               total_earned = total_earned + ?
+                               total_earned = total_earned + ?,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [amount || 0, walletAddress];
+            params = [amount || 0, Math.floor(Date.now() / 1000), walletAddress];
             break;
 
           case 'shield':
             updateQuery = `UPDATE player_stats 
                            SET total_actions = total_actions + 1,
                                shields_activated = shields_activated + 1,
-                               total_spent = total_spent + ?
+                               total_spent = total_spent + ?,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [amount || 0, walletAddress];
+            params = [amount || 0, Math.floor(Date.now() / 1000), walletAddress];
             break;
 
           default:
             // Generic action counter
             updateQuery = `UPDATE player_stats 
-                           SET total_actions = total_actions + 1
+                           SET total_actions = total_actions + 1,
+                               last_action_time = ?
                            WHERE wallet_address = ?`;
-            params = [walletAddress];
+            params = [Math.floor(Date.now() / 1000), walletAddress];
         }
 
         if (updateQuery) {
@@ -171,7 +197,7 @@ async function updatePlayerStats(walletAddress, actionType, amount = 0, slots = 
               return reject(err);
             }
 
-            // Recalculate composite scores
+            // ✅ Recalculate composite scores after updating stats
             recalculatePlayerScore(walletAddress)
               .then(() => {
                 console.log(`✅ Updated stats and score for ${walletAddress}`);
